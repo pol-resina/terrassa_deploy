@@ -1,4 +1,3 @@
-import numpy as np
 import pandas as pd
 
 def join_preprocessing(df_SIAD_new, df_beques):

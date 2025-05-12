@@ -1,5 +1,4 @@
 import pandas as pd
-import numpy as np
 import os
 from SIAD_preprocessing import siad_preprocess
 from MENJADOR_preprocessing import menja_preprocessing

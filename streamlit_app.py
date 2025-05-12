@@ -1,9 +1,4 @@
 import streamlit as st
-import pandas as pd
-import numpy as np
-import plotly.express as px
-import plotly.graph_objects as go
-import io
 from datetime import datetime
 import base64
 from streamlit_option_menu import option_menu
