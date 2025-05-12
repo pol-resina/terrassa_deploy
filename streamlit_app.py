@@ -1,7 +1,6 @@
 import streamlit as st
 from datetime import datetime
 import base64
-import streamlit.components.v1 as components
 from PIL import Image
 
 
