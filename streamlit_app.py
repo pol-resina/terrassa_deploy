@@ -159,7 +159,7 @@ elif menu == "Carregar Dades":
 
             if 'dades_discriminacions' in st.session_state and st.session_state.dades_discriminacions is not None:
                 st.success("Totes les dades han estat guardades correctament.")
-            elif 'dades_ajut_menjador' in st.session_state and st.session:
+            elif 'dades_ajut_menjador' in st.session_state and st.session_state.dades_ajut_menjador is not None:
                 st.success("Dades d'ajuts menjador guardades correctament.")
             else:
                 st.success("Dades de discriminacions guardades correctament.")
