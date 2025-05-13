@@ -454,7 +454,7 @@ pyRFC3339==1.1
 pyrsistent==0.19.3
 PySocks==1.7.1
 pyspark==3.1.1
-python-apt===2.1.2pop0-1587756471-20.04-cd2988e
+python-apt===2.1.2
 python-daemon==3.1.0
 python-dateutil==2.8.2
 python-debian==0.1.36+ubuntu1.1
