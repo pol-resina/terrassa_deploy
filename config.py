@@ -39,8 +39,8 @@ def create_stylish_sidebar(logo_base64, terrassa_base64):
         # Use option_menu for better looking navigation
         selected = option_menu(
             menu_title=None,  # No title needed
-            options=["Inici", "Carregar Dades", "Visualització de Dades", "Sobre Preprocessat"],
-            icons=["house", "cloud-upload", "bar-chart", "gear"],  # Bootstrap icons
+            options=["Inici", "Carregar Dades", "Visualització de Dades"],
+            icons=["house", "cloud-upload", "bar-chart"],  # Bootstrap icons
             menu_icon="cast",
             default_index=0,
             styles={

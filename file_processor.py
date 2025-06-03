@@ -57,7 +57,7 @@ def read_dades_ajuts_menjador(data):
     filename = data.name  # Agafar el nom del fitxer
 
     if filename.endswith('.csv'):
-        data_df = pd.read_csv(data)
+        data_df = pd.read_csv(data, encoding='latin1')
     elif filename.endswith('.xls') or filename.endswith('.xlsx'):
         data_df = pd.read_excel(data)
     elif filename.endswith('.xlsb'):

@@ -1,14 +1,16 @@
 import streamlit as st
 from datetime import datetime
 import base64
-from PIL import Image
+import streamlit.components.v1 as components
+import os
 
 
+from JOIN_preprocessing import join_preprocessing
 from file_processor import read_dades_discriminacions
 from file_processor import read_dades_ajuts_menjador
-from file_processor import write_data_to_folder
 
-from config import get_base64_image, create_stylish_sidebar, display_page_header
+
+from config import get_base64_image, create_stylish_sidebar
 
 # Page configuration
 st.set_page_config(
@@ -35,7 +37,6 @@ if 'use_sample_data' not in st.session_state:
 # Main content area based on menu selection
 if menu == "Inici":
     # Home page content
-    display_page_header(terrassa_base64)
     st.markdown(
         """
         <div class="home-hero">
@@ -45,8 +46,18 @@ if menu == "Inici":
         unsafe_allow_html=True
     )
     
+    # Define PDF paths - we'll use a different approach
+    pdf_files = {
+        "diccionari_discriminacio": "Diccionari_SIAD.pdf",
+        "diccionari_menjador": "Diccionari_Menjador.pdf",
+        "manual": "Manual_.pdf",
+        "decisions": "Pipeline.pdf"
+    }
+    
+    # Create columns for cards
     col1, col2, col3 = st.columns(3)
     
+    # Card 1 - Diccionari Dades
     with col1:
         st.markdown(
             """
@@ -57,10 +68,11 @@ if menu == "Inici":
                     Diccionari que conté explicació de l'estructura de la base de dades.
                 </p>
             </div>
-            """, 
+            """,
             unsafe_allow_html=True
         )
     
+    # Card 2 - Manual
     with col2:
         st.markdown(
             """
@@ -71,10 +83,11 @@ if menu == "Inici":
                     Manual per utilitzar correctament l'aplicació.
                 </p>
             </div>
-            """, 
+            """,
             unsafe_allow_html=True
         )
     
+    # Card 3 - Decisions Pipeline
     with col3:
         st.markdown(
             """
@@ -85,9 +98,44 @@ if menu == "Inici":
                     Explicació detallada del procés que seguim per netejar les dades.
                 </p>
             </div>
-            """, 
+            """,
             unsafe_allow_html=True
         )
+
+
+    # Create a central section for PDF selection
+    st.markdown("<hr>", unsafe_allow_html=True)
+    st.markdown("### Accés als documents")
+    
+
+    # Additional option: embed PDFs inline if needed
+    with st.expander("Visualitzador de PDFs"):
+    # Create tabbed viewer
+        tabs = st.tabs(["Diccionari Discriminació", "Diccionari Menjador", "Manual", "Decisions Pipeline"])
+        
+        pdf_map = {
+            "Diccionari Discriminació": pdf_files["diccionari_discriminacio"],
+            "Diccionari Menjador": pdf_files["diccionari_menjador"],
+            "Manual": pdf_files["manual"],
+            "Decisions Pipeline": pdf_files["decisions"]
+        }
+
+        for tab, title in zip(tabs, pdf_map.keys()):
+            with tab:
+                selected_pdf = pdf_map[title]
+                st.markdown(f"### {title}")
+                
+                if os.path.exists(selected_pdf):
+                    try:
+                        with open(selected_pdf, "rb") as pdf_file:
+                            pdf_bytes = pdf_file.read()
+                        base64_pdf = base64.b64encode(pdf_bytes).decode('utf-8')
+                        pdf_display = f'<iframe src="data:application/pdf;base64,{base64_pdf}" width="100%" height="600px" type="application/pdf"></iframe>'
+                        st.markdown(pdf_display, unsafe_allow_html=True)
+                    except Exception as e:
+                        st.error(f"Error loading PDF: {str(e)}")
+                else:
+                    st.error(f"PDF file not found: {selected_pdf}")
        
     # Getting started section
     st.markdown('<div class="sub-header">Com Començar</div>', unsafe_allow_html=True)
@@ -105,19 +153,24 @@ if menu == "Inici":
         """, 
         unsafe_allow_html=True
     )
+    mesos_catala = [
+    "Gener", "Febrer", "Març", "Abril", "Maig", "Juny",
+    "Juliol", "Agost", "Setembre", "Octubre", "Novembre", "Desembre"
+    ]
+    mes_actual = datetime.now().month
+    nom_mes_catala = mesos_catala[mes_actual - 1]
     
     # Footer
     st.markdown(
-        """
+        f"""
         <div class="home-footer">
             <p>© 2025 Equivision. Tots els drets reservats.</p>
-            <p>Versió 1.0.0 | Última actualització: Febrer 2025</p>
+            <p>Versió 1.0.0 | Última actualització: {nom_mes_catala} 2025</p>
         </div>
         """, 
         unsafe_allow_html=True
     )
 elif menu == "Carregar Dades":
-    display_page_header(terrassa_base64)
     st.markdown('<div class="main-header">Carregar Dades</div>', unsafe_allow_html=True)
         
     st.markdown('<div class="sub-header">Pujar Fitxers de Dades</div>', unsafe_allow_html=True)
@@ -142,30 +195,63 @@ elif menu == "Carregar Dades":
     if dades_ajuts_menjador is not None:
         try:
             # Process the uploaded file to create a DataFrame
-            st.session_state.dades_ajut_menjador = read_dades_ajuts_menjador(dades_ajuts_menjador)
-            st.success(f"Dades carregades correctament: {dades_ajuts_menjador.name}")
+            st.session_state.dades_ajut_menjador, missing_menjador = read_dades_ajuts_menjador(dades_ajuts_menjador)
+            if len(missing_menjador) == 0:
+                st.success(f"Dades carregades correctament: {dades_ajuts_menjador.name}")
+            else:
+                st.warning(f"Falten columnes {missing_menjador}, les dades preprocessades pot no ser correctes")
             st.dataframe(st.session_state.dades_ajut_menjador.head())
         except Exception as e:
             st.error(f"Error en carregar les dades: {e}")
 
     # Save data button with verification check
-    if st.button('Guardar Dades'):
-        if 'dades_discriminacions' in st.session_state or 'dades_ajut_menjador' in st.session_state:
-            # Pass the processed DataFrames from session_state, not the raw uploaded files
-            write_data_to_folder(
-                st.session_state.get('dades_discriminacions'),
-                st.session_state.get('dades_ajut_menjador')
-            )
+    st.markdown("### Guardar Dades")
 
-            if 'dades_discriminacions' in st.session_state and st.session_state.dades_discriminacions is not None:
-                st.success("Totes les dades han estat guardades correctament.")
-            elif 'dades_ajut_menjador' in st.session_state and st.session_state.dades_ajut_menjador is not None:
-                st.success("Dades d'ajuts menjador guardades correctament.")
-            else:
-                st.success("Dades de discriminacions guardades correctament.")
-            
-        else:
-            st.error("No hi ha dades per guardar. Si us plau, carrega algun fitxer primer.")
+    dades_discriminacions = st.session_state.get('dades_discriminacions')
+    dades_ajut_menjador = st.session_state.get('dades_ajut_menjador')
+
+    if dades_discriminacions is not None:
+        try:
+            csv_discriminacions = dades_discriminacions.to_csv(index=False).encode('utf-8')
+            st.download_button(
+                label="📥 Descarregar dades_discriminacions.csv",
+                data=csv_discriminacions,
+                file_name="dades_discriminacions.csv",
+                mime='text/csv',
+                key="download_discriminacions"
+            )
+        except Exception as e:
+            st.error(f"Error al generar el CSV de dades_discriminacions: {e}")
+
+    if dades_ajut_menjador is not None:
+        try:
+            csv_ajuts = dades_ajut_menjador.to_csv(index=False).encode('utf-8')
+            st.download_button(
+                label="📥 Descarregar dades_ajuts_menjador.csv",
+                data=csv_ajuts,
+                file_name="dades_ajuts_menjador.csv",
+                mime='text/csv',
+                key="download_ajuts"
+            )
+        except Exception as e:
+            st.error(f"Error al generar el CSV de dades_ajuts_menjador: {e}")
+
+    if dades_discriminacions is not None and dades_ajut_menjador is not None:
+        try:
+            merged = join_preprocessing(dades_discriminacions, dades_ajut_menjador)
+            csv_merged = merged.to_csv(index=False).encode('utf-8')
+            st.download_button(
+                label="📥 Descarregar dades_merged.csv",
+                data=csv_merged,
+                file_name="dades_merged.csv",
+                mime='text/csv',
+                key="download_merged"
+            )
+        except Exception as e:
+            st.error(f"Error al generar el CSV de dades_merged: {e}")
+
+
+    st.markdown("</div>", unsafe_allow_html=True)
     
 
     st.markdown("</div>", unsafe_allow_html=True)
@@ -177,7 +263,6 @@ elif menu == "Carregar Dades":
     )
     
 elif menu == "Visualització de Dades":
-    display_page_header(terrassa_base64)
     st.markdown('<div class="main-header">Visualització de Dades</div>', unsafe_allow_html=True)
     
     # Initialize session state variables if they don't exist

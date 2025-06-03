@@ -1,8 +1,9 @@
-import pandas as pd
 import numpy as np
+
 
 def menja_preprocessing(df):   
     df_filtered = df
+    missing = []
     
     cols_to_drop = [
         "sollicitant_parentesc", "finques_urbanes_nr", "subcodi",  
@@ -35,7 +36,7 @@ def menja_preprocessing(df):
         'resultat_consulta_renda11', 'resultat_consulta_renda12'
     ]
     
-    df_filtered2 = df_filtered.drop(cols_to_drop, axis=1)
+    df_filtered2 = df_filtered.drop(cols_to_drop, axis=1, errors='ignore')
     
     columns_to_change = ['autoritzacio_aeat', 'familia_nombrosa_general', 'familia_nombrosa_especial', 'familia_monoparental', 'familia_monoparental_especial',
     'discapacitat_mes_33', 'habits_menjar_inadequats', 'trastorns_emocionals_familia', 'negligencia_lleu', 'seguiment_medic_excessiu', 'problemes_habitatge',
@@ -46,11 +47,22 @@ def menja_preprocessing(df):
     ]
     
     for column in columns_to_change:
+        if column not in df_filtered2.columns:
+            df_filtered2[column] = np.nan
+            missing.append(column)
         df_filtered2[column] = df_filtered2[column].replace({0: 'No', 1: 'Si'})
+
+    check_columns = ['publica_concertada', 'nacionalitat', 'nivellescolar', 'risc_social', 'renda_familiar']
+
+    for column in check_columns:
+        if column not in df_filtered2.columns:
+            df_filtered2[column] = np.nan
+            missing.append(column)
     
     # columns_to_consider = [col for col in df_filtered2.columns if 'membre' not in col and 'memebre' not in col]
     # df_filtered2 = df_filtered2[columns_to_consider]
-    
+    df_filtered2['publica_concertada'] = df_filtered2['publica_concertada'].replace(['PÚBLICA', 'CONCERTADA'], ['Pública', 'Concertada'])
+    df_filtered2['nacionalitat'] = df_filtered2['nacionalitat'].replace(['ES', 'ESTRANGERA'], ['Espanya', 'Estrangera'])
     df_filtered2['nivellescolar'] = df_filtered2['nivellescolar'].map({1: 'Infantil', 2: 'Primària', 3: 'ESO'})
     # df_filtered2['subvencio_lloguer_agencia_habitatge_catalunya'] = df_filtered2['subvencio_lloguer_agencia_habitatge_catalunya'].apply(lambda x: 1 if x > 0 else 0)
     # df_filtered2['ajut_urgencia_social'] = df_filtered2['ajut_urgencia_social'].apply(lambda x: 1 if x > 0 else 0)
@@ -60,6 +72,7 @@ def menja_preprocessing(df):
     df_filtered2['renda_familiar'] = df_filtered2['renda_familiar'].apply(lambda x: -100000 if x < 0 else x)
     # df_filtered2['volum_negoci'] = df_filtered2['volum_negoci'].apply(lambda x: 1 if x > 0 else 0)
     # df_filtered2['rendiment_capital_mobiliari'] = df_filtered2['rendiment_capital_mobiliari'].apply(lambda x: 1 if x > 0 else 0)
+    #df_filtered2 = df_filtered2.rename(columns={"ID_UPC_membre1": "Id_UPC_membre1"})
     
     cols_to_drop2 = [
         'sectordereferencia', 'data_resolucio', 'data_adjudicacio', 'data_alta_ajut',
@@ -67,6 +80,6 @@ def menja_preprocessing(df):
         'alta_multiple', 'Barri'
     ]
     
-    df_filtered3 = df_filtered2.drop(cols_to_drop2, axis=1)
+    df_filtered3 = df_filtered2.drop(cols_to_drop2, axis=1, errors='ignore')
     
-    return df_filtered3
+    return (df_filtered3, missing)

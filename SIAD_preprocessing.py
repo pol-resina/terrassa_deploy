@@ -3,6 +3,10 @@ import numpy as np
 import random
 import re
 
+import warnings
+warnings.filterwarnings('ignore')
+
+
 def siad_preprocess(df):
     """
     Reads dataframe from SIAD and preprocesses it.
@@ -14,37 +18,6 @@ def siad_preprocess(df):
         pandas.DataFrame: Preprocessed discrimination data.
     """
 
-    #Define cols to drop
-    # cols_to_drop = ["COD_AREA", "DATA_BAIXA", "ESTAT",
-    #             "NOM_ESTAT", "RESULTAT", "TIPUSCITA", "DENUNCIA",
-    #             "EXP_ORIGEN", "COD_EXP_ECIVIL", "COD_EXP_NIVSOCIO",
-    #             "COD_EXP_PROFESIO", "COD_EXP_TITULACIO", "FONT_INGRESSOS", "COD_IDGENERE",
-    #             "COD_MOTIU", "COD_MUNICIPI", "COD_PERMIS_RESI", "COD_PERMIS_TREBALL", "COD_PER_ECIVIL",
-    #             "COD_PER_NACIONALITAT", "COD_PER_NIVSOCIO", "COD_PER_PROFESIO",
-    #             "COD_PER_TITULACIO", "COD_USUARI_RESPON", "BAJA_PH",
-    #             "DATA_BAIXA_MAL", "COD_AREA_1", "DATA_BAIXA_2", "HORARI",
-    #             "DESC_HORARI", "MOTIU_TANCAMENT", "D_OCUPACIO", "D_ORIGEN", "TIPUS_ALTA", "SEXE_PH"]
-    
-    # redundant_columns = ["DESC_AREA", "PA_COD_PERSONA", "COD_PERSONA_1", "COD_SUBEXPEDIENT_1",
-    #                  "COD_PROVINCIA", "N_FILLS_PG"]
-    
-    # cols_to_drop_ph = ["DATA_NAIX_PH", "TITULACIO_PH", "PAIS_PROC_PH", "NACIONALITAT_PH"]
-    
-    # cols_to_drop_pg = ["POBLACION_PG", "D_ESTAT_CIVIL_PG", "D_PROFESION_PG", "D_NIV_SOCI_ECO_PG", "PROVINCIA_PG",
-    #                "NACIONALITAT_PG", "PAIS_PROC_PG", "D_TITULACIO_PG", "B_RECIBIRINFORMACION_PG", "TIPUS_DOCUMENT_PG"]
-
-    # cols_to_drop_per = ["NOM_PER_PROFESIO", "NOM_PER_NIVSOCIO", "NOM_PER_TITULACIO", "PER_NUMFILLS",
-    #                 "NOM_PER_ECIVIL", "NOM_PER_NACIONALITAT"]
-
-    # cols_with_no_info = ["PRIMERA_VISITA", "DATA_CITA_FI", "DATA_MODI", "COD_SUBEXPEDIENT",
-    #                  "DATA_MODIFICACIO", "DATA_SOLICITUD",
-    #                  "DATA_TANCAMENT", "DATA_ALTA_2", "DATA_MODI_2",
-    #                  "DATA_TANCAMENT_1", "COD_GRUP", "NOM_RESULTAT",
-    #                  "DATA_MODI_MAL", "COD_EXPEDIENT_1", "COD_PERSONA_2", "DATA_ALTA",
-    #                  "ASSISTEIX_CURS", "CONJUNTA", "DESPLAZADA", "NOM_IDGENERE", "NOM_MUNICIPI",
-    #                  "SEXE_PG", "B_TRADUCTOR_PG", "INFANCIA", "MALTRACTAMENT",
-    #                  "CODI_PER_MAL", "AGRESSOR", "DATA_ALTA_MAL", "COD_PERSONA", "DATA_NAIX_PG",
-    #                  "COD_EXP_MAL", "DATA_NAIX"]
     cols_important = ['ID_UPC', 'COD_CITA', 'DISTRICTE_PH', 'SECCIO_PH', 'BARRI_PH',
                 'NOM_BARRI_PH', 'NOM_AREA', 'COD_EXPEDIENT', 'DATA_CITA_INI',
                 'NOM_TIPUSCITA', 'DATA_CITA_FI', 'DATA_OBERTURA', 'DESC_DENUNCIA', 'EDAT',
@@ -85,38 +58,13 @@ def siad_preprocess(df):
     df["NOM_EXP_TITULACIO"] = df["NOM_EXP_TITULACIO"].fillna(df["NOM_PER_TITULACIO"])
     df = df.drop(columns=["NOM_PER_TITULACIO"])
 
-    # df = df.drop(columns=cols_to_drop+
-    #                  redundant_columns+
-    #                  cols_to_drop_ph+
-    #                  cols_to_drop_pg+
-    #                  cols_to_drop_per+
-    #                  cols_with_no_info)
 
-    #Synthetic values to new columns
-    np.random.seed(1)
-    if df["DISCAPACITAT"].isna().all():
-        df["DISCAPACITAT"] = np.random.choice(['No', 'Si'], size=len(df), p=[0.98, 0.02])
-
-    if df["ORDRE PROTECCIO"].isna().all():
-        df["ORDRE PROTECCIO"] = df.apply(lambda row: 'No' if pd.isna(row['COD_MAL']) else 
-                                         np.random.choice(['No', 'Si'], p=[0.86, 0.14]), axis=1)
-
-    if df["DESC_MALTRACTAMENT"].isna().all():
-        df["DESC_MALTRACTAMENT"] = df.apply(lambda row: 'No aplica' if pd.isna(row['COD_MAL']) else
-                                 np.random.choice(["Maltractament fisic", "Maltractament global",
-                                                   "Maltractament psicologic", "Maltracte sexual",
-                                                   "Violència vicaria", "Mutilació genial femenina",
-                                                   "Violència obstètrica", "Violència econòmica",
-                                                   "Negligència", "Orientació Sexual"],
-                                                    p=[0.2441,0.1034,0.5678,0.0508,0.0237,0.0051,0.0007,0.0034, 0.0005, 0.0005]), axis=1)
-
-    if df["DESC_AGRESSOR"].isna().all():
-        df["DESC_AGRESSOR"] = df.apply(lambda row: 'Sense dades' if pd.isna(row['COD_MAL']) else 
-                                         np.random.choice(["Parella", "Ex-parella", "Pares", "Pare", "Àmbit sanitari",
-                                                           "Familiar", "Fill/a", "Feina", "Conegut", "Desconegut"],
-                                                            p=[0.6154, 0.2271, 0.0391, 0.0017, 0.0017, 0.0271, 0.0323, 0.0169, 0.0169, 0.0218]), axis=1)
-
-    #Change NAs of categoricals to Sense dades
+    #Change NAs of categoricals to other vales or Sense dades
+    df["DISCAPACITAT"] = df["DISCAPACITAT"].fillna('No')
+    df["ORDRE PROTECCIO"] = df["ORDRE PROTECCIO"].fillna('No')
+    df["DESC_MALTRACTAMENT"] = df["DESC_MALTRACTAMENT"].fillna('No aplica')
+    df["DESC_AGRESSOR"] = df["DESC_AGRESSOR"].fillna('No aplica')
+    
     for column in df.columns:
         if df[column].dtype == 'object':
             df[column] = df[column].fillna('Sense dades')
@@ -155,6 +103,9 @@ def siad_preprocess(df):
     df["NOM_PERMIS_TREBALL"] = df["NOM_PERMIS_TREBALL"].replace('Sense informacio', 'Sense dades')
     df["DESC_TIPUS_ALTA"] = df["DESC_TIPUS_ALTA"].replace('Sense informacio', 'Sense dades')
     df["GR_EDAT"] = df["GR_EDAT"].replace('>80', '80+')
+
+    ##Caps
+    df["NOM_PER_PAISNAIX"] = df["NOM_PER_PAISNAIX"].str.capitalize()
         
     #Drop rows in which we have no information about DATA_OBERTURA
     df = df[(df["DATA_OBERTURA"] != '1900-01-01')]

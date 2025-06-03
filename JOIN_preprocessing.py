@@ -1,6 +1,6 @@
 import pandas as pd
 
-def join_preprocessing(df_SIAD_new, df_beques):
+def join_preprocessing(df_SIAD, df_beques):
     """
     Reads two dataframes from MENJADOR and SIAD and preprocesses them."
     """
@@ -12,6 +12,7 @@ def join_preprocessing(df_SIAD_new, df_beques):
     3. Reducció de beques amb només els membres al SIAD
     4. Group by ID i agrupació de les variables
     """
+    df_SIAD_new=df_SIAD.copy()
     df_beques.rename(columns = {"ID_UPC_membre1": "Id_UPC_membre1"}, inplace = True)
 
     id_beques_members = set() # ID of all members and children in beques
@@ -105,12 +106,5 @@ def join_preprocessing(df_SIAD_new, df_beques):
 
     for var, series in SIAD_aggregations.items():
         df_SIAD_new[var] = df_SIAD_new['ID_UPC'].map(series)
-        
 
-        # Identify which rows have actual scholarship data
-    has_beca_data = df_SIAD_new['B_CURS'].notna()
-
-    # Create the filtered dataset with only records that have scholarship data
-    df_SIAD_filtered_final = df_SIAD_new[has_beca_data].copy()
-
-    return df_SIAD_filtered_final
+    return df_SIAD_new
